@@ -13,13 +13,18 @@ clock = pygame.time.Clock()
 class Diver(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
+        self.pos = pygame.math.Vector2(PLAYER_START_X,PLAYER_START_Y)
         self.image = pygame.transform.rotozoom(pygame.image.load("Sprites/diver_idle/Diver1.png").convert_alpha(),0, PLAYERSIZE)
         self.base_image = self.image
-
-        self.pos = pygame.math.Vector2(PLAYER_START_X, PLAYER_START_Y)
-
-
-
+        self.hitbox_rect = self.base_image.get_rect(center = self.pos)
+        self.rect = self.hitbox_rect.copy()
+    def diver_rotation(self):
+        self.chords = pygame.mouse.get_pos()
+        self.x_change_mouse = (self.chords[0] - self.hitbox_rect.centerx)
+        self.y_change_mouse = (self.chords[1] - self.hitbox_rect.centery)
+        self.angle = math.degrees(math.atan2(self.y_change_mouse, self.x_change_mouse))
+        self.image = pygame.transform.rotate(self.base_image, -self.angle)
+        self.rect = self.image.get_rect(center=self.hitbox_rect.center)
     def user_input(self):
         self.velocity_x = 0
         self.velocity_y = 0
@@ -41,10 +46,12 @@ class Diver(pygame.sprite.Sprite):
 
     def move(self):
         self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
-
+        self.hitbox_rect.center = self.pos
+        self.rect.center = self.hitbox_rect.center
     def update(self):
         self.user_input()
         self.move()
+        self.diver_rotation()
 
 diver = Diver()
 
