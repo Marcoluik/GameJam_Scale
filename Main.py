@@ -10,23 +10,66 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Golden Diver")
 clock = pygame.time.Clock()
+diver_images = []
+bullet_image = pygame.image.load("Sprites/Bullets/HARPOON.png")
+enemy_images = []
+weapon_images = []
+weapon_reload_images = []
 
+def image_load():
+    for i in range(1,15):
+        image = pygame.image.load(f"Sprites/Diver_idle_ver2/Diver_idle_ver{i}.png")
+        scaled_image = pygame.transform.scale(image, (
+        HEIGHT/6, HEIGHT/6))
+        diver_images.append(scaled_image)
+
+    for i in range(1, 13):
+        image = pygame.image.load(f"Sprites/Harpoon/Harpoon_idle/Harpooon_idle{i}.png")
+        scaled_image = pygame.transform.scale(image, (HEIGHT/6, HEIGHT/6))
+        weapon_images.append(scaled_image)
+
+
+    for i in range(1, 14):
+        image = pygame.image.load(f"Sprites/Harpoon/Harpoon_reload/Harpoon_reload{i}.png")
+        scaled_image = pygame.transform.scale(image, (HEIGHT/6, HEIGHT/6))
+        weapon_reload_images.append(scaled_image)
+
+
+    for i in range(1, 11):
+        image = pygame.image.load(f"Sprites/Enemy/Enemy{i}.png")
+        scaled_image = pygame.transform.scale(image, (HEIGHT/6, HEIGHT/6))
+        enemy_images.append(scaled_image)
 # Sprite class
 class Diver(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.pos = pygame.math.Vector2(PLAYER_START_X,PLAYER_START_Y)
-        self.image = pygame.transform.rotozoom(pygame.image.load("Sprites/diver_idle/Diver1.png").convert_alpha(),0, PLAYERSIZE)
-        self.base_image = self.image
-        self.hitbox_rect = self.base_image.get_rect(center = self.pos)
+        self.pos = pygame.math.Vector2(PLAYER_START_X, PLAYER_START_Y)
+        self.diver_images = diver_images  # Assign loaded images
+        self.unrotated_image = self.diver_images[0]  # Initialize with the first image
+        self.image = self.unrotated_image
+        self.base_image = self.unrotated_image
+        self.hitbox_rect = self.base_image.get_rect(center=self.pos)
         self.rect = self.hitbox_rect.copy()
         self.shoot_cooldown = 0
+        self.animation_speed = 5
+        self.animation_frame = 0
+        self.animation_timer = 0
+
+    def animate(self):
+        # Update the animation frame based on the animation speed
+        self.animation_timer += 1
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.animation_frame = (self.animation_frame + 1) % len(self.diver_images)
+            self.unrotated_image = self.diver_images[self.animation_frame]
+            self.image = pygame.transform.rotate(self.unrotated_image, -self.angle)
+            self.rect = self.image.get_rect(center=self.hitbox_rect.center)
     def diver_rotation(self):
         self.chords = pygame.mouse.get_pos()
         self.x_change_mouse = (self.chords[0] - self.hitbox_rect.centerx)
         self.y_change_mouse = (self.chords[1] - self.hitbox_rect.centery)
         self.angle = math.degrees(math.atan2(self.y_change_mouse, self.x_change_mouse))
-        self.image = pygame.transform.rotate(self.base_image, -self.angle)
+        self.image = pygame.transform.rotate(self.unrotated_image, -self.angle)
         self.rect = self.image.get_rect(center=self.hitbox_rect.center)
     def user_input(self):
         self.velocity_x = 0
@@ -69,6 +112,7 @@ class Diver(pygame.sprite.Sprite):
         self.user_input()
         self.move()
         self.diver_rotation()
+        self.animate()
 
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
@@ -156,7 +200,7 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         self.move()
 
-
+image_load()
 diver = Diver()
 tiles = Tiles()
 
