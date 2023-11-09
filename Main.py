@@ -50,6 +50,7 @@ class Diver(pygame.sprite.Sprite):
         self.base_image = self.unrotated_image
         self.hitbox_rect = self.base_image.get_rect(center=self.pos)
         self.rect = self.hitbox_rect.copy()
+        self.points = 0
         self.shoot_cooldown = 0
         self.animation_speed = 5
         self.animation_frame = 0
@@ -108,14 +109,26 @@ class Diver(pygame.sprite.Sprite):
         self.hitbox_rect.center = self.pos
         self.rect.center = self.hitbox_rect.center
 
+    def enemy_spawn(self):
+        print(self.points)
+        if self.points >= 10:
+            enemy = Enemy(self.pos[0], self.pos[1], 10)
+            enemy_group.add(enemy)
+            all_sprites_group.add(enemy)
+            self.points -= 10
+
+
+
     def update(self):
         self.user_input()
         self.move()
         self.diver_rotation()
         self.animate()
-
+        #self.enemy_spawn()
+        self.points += 10
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
+
 
 class Tiles(pygame.sprite.Sprite):
     def __init__(self):
@@ -171,18 +184,27 @@ class Bullet(pygame.sprite.Sprite):
         self.bullet_movement()
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y, type):
+    def __init__(self, x, y, cost):
         super().__init__()
         self.diver_x = x
         self.diver_y = y
-        self.type = type
+        self.type = cost
         self.angle = math.degrees(math.atan2(self.diver_x, self.diver_y))
-        self.image = pygame.image.load("Sprites/Bullets/HARPOON.png").convert_alpha()
-        self.base_image = pygame.transform.rotozoom(self.image, 0, BULLET_SCALE)
-        self.image = pygame.transform.rotate(self.base_image, -self.angle)
-        self.rect = self.image.get_rect()
-        self.rect.center = (self.diver_x+ 100, self.diver_y+ 100)
+        self.animation_speed = 5
+        self.animation_frame = 0
+        self.animation_timer = 0
+        self.image = None  # Initialize the image attribute
+        offset = random.randint(-50, -30)
+        self.rect.center = (self.diver_x + offset, self.diver_y + offset)
+    def spawn(self):
 
+        if self.type == 10:
+            self.enemy_images = enemy_images  # Assign loaded images
+            self.unrotated_image = self.enemy_images[0]  # Initialize with the first image
+            self.image = self.unrotated_image
+            self.base_image = self.unrotated_image
+            self.image = pygame.transform.rotate(self.base_image, -self.angle)
+            self.rect = self.image.get_rect()
     def move(self):
         # Calculate the angle to the diver's position
         dx = self.diver_x - self.x
@@ -197,8 +219,20 @@ class Enemy(pygame.sprite.Sprite):
 
         # Update the sprite's position
         self.rect.center = (self.x, self.y)
+
+    def animate(self):
+        # Update the animation frame based on the animation speed
+        self.animation_timer += 1
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.animation_frame = (self.animation_frame + 1) % len(self.diver_images)
+            self.unrotated_image = self.diver_images[self.animation_frame]
+            self.image = pygame.transform.rotate(self.unrotated_image, -self.angle)
+            self.rect = self.image.get_rect(center=self.hitbox_rect.center)
+
     def update(self):
         self.move()
+        self.spawn()
 
 image_load()
 diver = Diver()
